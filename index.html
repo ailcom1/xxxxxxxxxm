@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة محيبس</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        #score-box {
+            width: 200px;
+            padding: 10px;
+            font-size: 1.2em;
+            background-color: #444;
+            color: #ffdd57;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            width: 420px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .cup {
+            width: 80px;
+            height: 100px;
+            background-color: #b22222;
+            border-radius: 0 0 50% 50%;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.3s, background-color 0.3s;
+        }
+
+        .cup:hover {
+            transform: scale(1.1);
+            background-color: #ff4040;
+        }
+
+        .ring {
+            width: 35px;
+            height: 35px;
+            background-color: gold;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 10px;
+            left: calc(50% - 17.5px);
+            box-shadow: 0px 0px 10px rgba(255, 215, 0, 0.8);
+            display: none;
+            transition: transform 0.3s ease;
+        }
+
+        .ring.appear {
+            display: block;
+            transform: scale(1.3);
+        }
+
+        #message {
+            font-size: 1.2em;
+            margin-top: 10px;
+            background-color: #444;
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #reset {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: #ff6347;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s;
+        }
+
+        #reset:hover {
+            background-color: #ff4500;
+        }
+    </style>
+</head>
+<body>
+    <div id="score-box">النقاط: 100</div>
+    <div class="game-container">
+        <div class="cup" onclick="guess(0)"><div class="ring"></div></div>
+        <div class="cup" onclick="guess(1)"><div class="ring"></div></div>
+        <div class="cup" onclick="guess(2)"><div class="ring"></div></div>
+        <div class="cup" onclick="guess(3)"><div class="ring"></div></div>
+        <div class="cup" onclick="guess(4)"><div class="ring"></div></div>
+        <div class="cup" onclick="guess(5)"><div class="ring"></div></div>
+        <div class="cup" onclick="guess(6)"><div class="ring"></div></div>
+        <div class="cup" onclick="guess(7)"><div class="ring"></div></div>
+    </div>
+    <div id="message">اختر كوبًا لمعرفة مكان المحبس!</div>
+    <button id="reset" onclick="resetGame()">إعادة المحاولة</button>
+
+    <script>
+        let points = localStorage.getItem('points') ? parseInt(localStorage.getItem('points')) : 100;
+        let ringPosition = Math.floor(Math.random() * 8);
+        let guessed = false;
+
+        const funnyMessages = [
+            "انت نوب ما تعرف تلعب 😂😂", "شنو هاي! وين تركيزك؟ 😂", "والله قويه! بعدك ما تعلمت؟ 😂",
+            "كل مرة تخسر، صدك عجيب 😂", "هذا الحظ لو شنو؟ 😂", "انت ابد ما تعرف وين المحبس 😂",
+            "حاول مرة لخ 😂 يمكن تصيب", "يوميات: حاولت وما عرفت 😂", "شوكت راح تتعلم؟ 😂",
+            "هاي عيني وين حاط المحبس؟ 😂", "لا تلعب ويا المحبس، العب ويا نفسك 😂", "حتى المحبس ديضحك عليك 😂",
+            "لا والله، مو هذا المحبس! 😂", "عوف اللعب، روح نام أحسن 😂", "بالله عليك هاي لعبتك؟ 😂",
+            "وين شارد؟ المحبس مو هنا 😂", "الله يساعدك، مرة بعد مرة تخسر 😂", "يا نوب! ماكو فايده بيك 😂",
+            "ركز زين، ترى المحبس مو صعب 😂", "عيدها بعدك مو مضبوط 😂", "يعني شنو بعدك ما تعلمت؟ 😂",
+            "عجيبة هاي خسارة بعد خسارة! 😂", "توقعاتي الك تظل تخسر 😂", "هاي اللعبه مو الك 😂",
+            "اشو ماكو تطور؟ 😂", "منو علمك تلعب؟ 😂", "خساره بقت عليك 😂", "ماكو فايده! 😂",
+            "يعني المحبس ظاهر وانت ما شفته؟ 😂", "الله يعينك على نفسك 😂", "ياخي صعبه عليك هاللعبه 😂",
+            "ترا المحبس قدامك وانت ما شفته 😂", "اعترف، مو الك 😂", "المحبس ماله علاقه بخساراتك 😂",
+            "جرب غير لعبه 😂", "تره سهل بس انت...! 😂", "ياخي المحبس مو هني! 😂",
+            "خساره جديده، مبروك! 😂", "والله بطل، كل مره تخسر 😂", "المحبس ميشوفك حتى 😂",
+            "ماعرف، انت تلعب لو تضحك؟ 😂", "وين تروح؟ المحبس ما هنا! 😂"
+        ];
+
+        function updateScore() {
+            document.getElementById('score-box').textContent = `النقاط: ${points}`;
+            localStorage.setItem('points', points);
+        }
+
+        function guess(cupIndex) {
+            if (guessed) return;
+
+            const cups = document.querySelectorAll('.cup');
+            const message = document.getElementById('message');
+
+            if (cupIndex === ringPosition) {
+                points += 150;
+                cups[cupIndex].querySelector('.ring').classList.add('appear');
+                message.textContent = "مبروك! لقد وجدت المحبس 🎉";
+                message.style.backgroundColor = "#28a745";
+            } else {
+                if (points > 0) {
+                    points -= 50;
+                }
+                const randomMessage = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
+                message.textContent = randomMessage;
+                message.style.backgroundColor = "#dc3545";
+            }
+
+            guessed = true;
+            updateScore();
+        }
+
+        function resetGame() {
+            guessed = false;
+            ringPosition = Math.floor(Math.random() * 8);
+            const message = document.getElementById('message');
+            message.textContent = "اختر كوبًا لمعرفة مكان المحبس!";
+            message.style.backgroundColor = "#444";
+            document.querySelectorAll('.ring').forEach(ring => ring.classList.remove('appear'));
+        }
+
+        updateScore();
+    </script>
+</body>
+</html>
